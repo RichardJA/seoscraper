@@ -1,5 +1,6 @@
 import bs4
 import requests
+import re
 
 # chromedriver = "C:\\Users\\Richard\\Documents\\Programs\\chromedriver.exe"
 
@@ -7,6 +8,7 @@ url = "http://www.tearfund.org/en/about_you/what_your_church_can_do/"
 print('Starting Scrape...')
 print('Setting homepage to %s...' % (url))
 
+pages_scraped = {}
 
 def scrape_title_tags(page_text):
     """
@@ -58,19 +60,23 @@ def scrape_anchor_text(page_text):
     anchors = {}
 
     for n in links:
-        if n.get_text() != "":
-            if n.get('href') not in links_logged and n.get('href') != 'javascript:void(0)':
+        link_regex = re.compile(r'\?.*|\/en\/|http.*|mailto:.*')
+        mo = link_regex.sub("", n.get('href'))
+        if mo != "":
+            if mo not in links_logged and mo != 'javascript:void(0)':
+                # send the link over to store_links to prevent replication of loop
+                store_links(n.get('href'))
+                links_logged.append(n.get('href'))
                 # This code is not needed unless we want to report on all anchors, not just bad anchors
                 # anchors[n.get('href')] = n.get_text().replace('\n', '')
-                # links_logged.append(n.get('href'))
                 if n.get_text().replace('\n', '').lower() in bad_anchors:
                     bad_anchors_logged += 1
-                    # remove next (2) lines if decide to report on all anchors
+                    # remove next (1) line if decide to report on all anchors
                     anchors[n.get('href')] = n.get_text().replace('\n', '')
-                    links_logged.append(n.get('href'))
+
             else:
-                print(n.get('href'))
-    print(anchors)
+                print(n.get('href'), "has already been recorded or is an invalid url")
+
     print('Print there are: ', str(bad_anchors_logged), ' bad anchors')
 
 
@@ -88,6 +94,17 @@ def scrape_alt_text(page_text):
         else:
             alt_text["With"] += 1
     return alt_text
+
+
+def store_links(url):
+    """
+    Takes the page text passed through and finds all the links
+    Checks whether the link is an internal link and if not ignores it
+    If not already part of dictionary, adds it and sets default value to 0
+    Value should only ever be set to 1 if the page is scraped
+    """
+    # print(url)
+    pass
 
 
 def check_page_level():
