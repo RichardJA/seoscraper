@@ -17,12 +17,14 @@ def get_full_url(url):
     If not already part of dictionary, adds it and sets default value to 0
     Value should only ever be set to 1 if the page is scraped
     """
+
     if url[0] == "/":
         url = domain + url
+    elif url[0:3] == "www":
+        url = "http://" + url
     elif url[0:4] != "http":
         url = domain + "/" + url
-    if url not in pages_status:
-        pages_status.setdefault({url, 0})
+    print(url)
     return url
 
 
@@ -31,26 +33,42 @@ def check_page_level():
     pass
 
 
-def store_results(the_results):
-    # store the results in a google sheet
-    pass
-
-
 def main():
-    '''
-
-    :return:
-    '''
+    """
+    Starts the program.
+    Stores completed pages in a list and stores completed status within a dictionary
+    """
+    # The first iteration of this function is completed outside of the loop as the home page is hard coded.
+    # After the first iteration, the variable changes to "current_url" and can then be looped
     print('Starting Scrape...')
-    pages_status.setdefault(start_url, 0)
-    pages.append(page.Page(start_url))
-    pages_status[start_url] = 1
-    for n in pages[0].all_links:
-        if n not in pages_status:
-            pages_status[n] = 0
-    print(pages_status)
-    # current_url = ""
-    #
+    current_url = start_url
+    pages_status.setdefault(current_url, 0)
+    while True:
+        pages_status[current_url] = 1
+        temp_page = page.Page(current_url)
+        pages.append(temp_page)
+
+        for n in temp_page.all_links:
+            current_url = get_full_url(n)
+            pages_status.setdefault(current_url, 0)
+
+
+        for k, v in pages_status.items():
+            if v == 0:
+                current_url = pages_status[k]
+                print(current_url)
+                break
+
+
+        # for n in range(len(pages)):
+        #     print(pages[n].page_url)
+        #     #if pages_status[pages[n].page_url] == 0:
+        #      #   pages_status[n] = 0
+        # if 0 not in pages_status.values():
+        #     print(pages_status.values())
+        #     print("All Pages Completed")
+        #     break
+        # #
     # while True:
     #
     #     for k, v in pages_status.items():
