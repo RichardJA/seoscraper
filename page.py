@@ -25,6 +25,7 @@ class Page(object):
         self.scrape_h_tags()
         self.scrape_alt_text()
         self.scrape_anchor_text()
+        self.get_all_links()
 
     def get_page_text(self):
         """
@@ -79,36 +80,46 @@ class Page(object):
         Note: For SEO purposes, Google only really cares about the first link, so this will only evaluate the first link
         """
         bad_anchors_text = ['read more', 'click here', 'here', 'see more', 'learn more', 'find out more']
-        bad_anchors_logged = 0
         links = self.page_text.select('a')
         links_logged = []
-        anchors = {}
 
         for n in links:
-
             link_regex = re.compile(r'\?.*|/en/|http.*|mailto:.*|#')
             mo = link_regex.sub("", n.get('href'))
             if mo != "":
                 if mo not in links_logged and mo != 'javascript:void(0)':
                     links_logged.append(n.get('href'))
                     # This code is not needed unless we want to report on all anchors, not just bad anchors
-                    # anchors[n.get('href')] = n.get_text().replace('\n', '')
+                    # self.anchors += 1
                     if n.get_text().replace('\n', '').lower() in bad_anchors_text:
-                        bad_anchors_logged += 1
-                        # remove next (1) line if decide to report on all anchors
-                        anchors[n.get('href')] = n.get_text().replace('\n', '')
-        self.anchors = {'Bad Anchors': bad_anchors_logged}
+                        self.anchors += 1
 
     def get_all_links(self):
+        """
+        Takes the page text and finds all the link urls
+        This can then be stored and cross referenced to find other pages for the program to crawl
+        """
         links = self.page_text.select('a')
-        links_logged = []
 
         for n in links:
             link_regex = re.compile(r'\?.*|/en/|http.*|mailto:.*|#')
             mo = link_regex.sub("", n.get('href'))
             if mo != "":
-                if mo not in links_logged and mo != 'javascript:void(0)':
+                if mo not in self.all_links and mo != 'javascript:void(0)':
+                    mo = self.set_full_url(mo)
+                    self.all_links.append(mo)
 
-                    links_logged.append(scraper.get_full_url(mo))
+    def set_full_url(self, url):
+        """
+        Takes the page text passed through and finds all the links
+        Checks whether the link is an internal link and if not ignores it
+        If not already part of dictionary, adds it and sets default value to 0
+        Value should only ever be set to 1 if the page is scraped
+        """
+        if url[0] == "/":
+            self.page_url = "www.tearfund.org" + url
+        elif url[0:4] != "http" and url[0:3] != "www":
+            self.page_url = "www.tearfund.org/" + url
+        return self.page_url
 
-        return links_logged
+

@@ -20,10 +20,9 @@ def get_full_url(url):
     if url[0] == "/":
         url = domain + url
     elif url[0:4] != "http":
-        url = domain + url
-    if not any(url in d for d in pages_status):
-        pages_status.append({url, 0})
-    print(pages_status)
+        url = domain + "/" + url
+    if url not in pages_status:
+        pages_status.setdefault({url, 0})
     return url
 
 
@@ -38,29 +37,30 @@ def store_results(the_results):
 
 
 def main():
+    '''
+
+    :return:
+    '''
     print('Starting Scrape...')
-    print('Setting homepage to ' + start_url)
     pages_status.setdefault(start_url, 0)
     pages.append(page.Page(start_url))
     pages_status[start_url] = 1
-    print("Homepage processed")
-    print("Title Value:", pages[0].title_text, "\nTitle Length:", pages[0].title_length, "\nAll Links:", pages[0].all_links)
-    current_url = ""
-    while True:
-        for k, v in pages_status.items():
-            if v == 0:
-                current_url = k
-                print(current_url)
+    for n in pages[0].all_links:
+        if n not in pages_status:
+            pages_status[n] = 0
+    print(pages_status)
+    # current_url = ""
+    #
+    # while True:
+    #
+    #     for k, v in pages_status.items():
+    #         if v == 0 and current_url != k:
 
-        pages_status.setdefault(current_url, 0)
-
-        #pages.append(page.Page(current_url))
-        if 0 in pages_status.values():
-            print("All Pages Completed")
-            break
-
-
-
+    #     pages_status.setdefault(current_url, 0)
+    #     pages.append(page.Page(current_url))
+    #     if 0 not in pages_status.values():
+    #         print("All Pages Completed")
+    #         break
 
 if __name__ == '__main__':
     main()
