@@ -7,7 +7,7 @@ domain = "http://www.tearfund.org"
 start_url = 'http://www.tearfund.org/'
 
 pages = []
-pages_status = []
+pages_status = {}
 
 
 def get_full_url(url):
@@ -40,12 +40,27 @@ def store_results(the_results):
 def main():
     print('Starting Scrape...')
     print('Setting homepage to ' + start_url)
-
+    pages_status.setdefault(start_url, 0)
     pages.append(page.Page(start_url))
-    pages_status.append({start_url, 0})
-    for n in pages_status:
-        if start_url in n:
-            print("in")
+    pages_status[start_url] = 1
+    print("Homepage processed")
+    print("Title Value:", pages[0].title_text, "\nTitle Length:", pages[0].title_length, "\nAll Links:", pages[0].all_links)
+    current_url = ""
+    while True:
+        for k, v in pages_status.items():
+            if v == 0:
+                current_url = k
+                print(current_url)
+
+        pages_status.setdefault(current_url, 0)
+
+        #pages.append(page.Page(current_url))
+        if 0 in pages_status.values():
+            print("All Pages Completed")
+            break
+
+
+
 
 if __name__ == '__main__':
     main()

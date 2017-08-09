@@ -8,7 +8,7 @@ class Page(object):
         self.page_url = page_url
         self.page_text = ""
         self.title_text = ""
-        self.title_length = len(self.title_text)
+        self.title_length = 0
         self.h_tags = {}
         self.alt_text = {"With Alt": 0, "Without Alt": 0}
         self.anchors = 0
@@ -21,6 +21,7 @@ class Page(object):
         """
         self.get_page_text()
         self.scrape_title_tags()
+        self.title_length = len(self.title_text)
         self.scrape_h_tags()
         self.scrape_alt_text()
         self.scrape_anchor_text()
