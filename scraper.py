@@ -3,7 +3,7 @@ import requests
 
 # chromedriver = "C:\\Users\\Richard\\Documents\\Programs\\chromedriver.exe"
 
-url = "http://www.tearfund.org"
+url = "http://www.tearfund.org/en/about_you/what_your_church_can_do/"
 print('Starting Scrape...')
 print('Setting homepage to %s...' % (url))
 
@@ -44,8 +44,34 @@ def scrape_h_tags(page_text):
 
 
 def scrape_anchor_text(page_text):
-    # scrape url passed through to check the anchor link text
-    pass
+    """
+    Takes the page text passed through and finds the anchor text on links
+    Ignores links that are images and not text
+    Looks up the text against a list of generic text and adds up each time the text is in the list
+    Note: For SEO purposes, Google only really cares about the first link, so this will only evaluate the first link
+    Returns the amount of links with text matching to the text in the list and the bad anchor text
+    """
+    bad_anchors = ['read more', 'click here', 'here', 'see more', 'learn more', 'find out more']
+    bad_anchors_logged = 0
+    links = page_text.select('a')
+    links_logged = []
+    anchors = {}
+
+    for n in links:
+        if n.get_text() != "":
+            if n.get('href') not in links_logged and n.get('href') != 'javascript:void(0)':
+                # This code is not needed unless we want to report on all anchors, not just bad anchors
+                # anchors[n.get('href')] = n.get_text().replace('\n', '')
+                # links_logged.append(n.get('href'))
+                if n.get_text().replace('\n', '').lower() in bad_anchors:
+                    bad_anchors_logged += 1
+                    # remove next (2) lines if decide to report on all anchors
+                    anchors[n.get('href')] = n.get_text().replace('\n', '')
+                    links_logged.append(n.get('href'))
+            else:
+                print(n.get('href'))
+    print(anchors)
+    print('Print there are: ', str(bad_anchors_logged), ' bad anchors')
 
 
 def scrape_alt_text(page_text):
@@ -70,9 +96,12 @@ def check_page_level():
 
 
 def scrape_all(page_text):
-    page_list = [scrape_title_tags(page_text), scrape_h_tags(page_text)]
-    scrape_alt_text(page_text)
+    page_list = [scrape_title_tags(page_text), scrape_h_tags(page_text), scrape_alt_text(page_text)]
     print(page_list)
+
+    scrape_anchor_text(page_text)
+
+
     pass
 
 
