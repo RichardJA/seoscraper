@@ -1,14 +1,9 @@
 import page
 import requests
-import bs4
-
-
-# This code isn't needed unless I decide to use Selenium
-# chromedriver = "C:\\Users\\Richard\\Documents\\Programs\\chromedriver.exe"
+import storage
 
 domain = "http://www.tearfund.org"
 start_url = 'http://www.tearfund.org/'
-# start_url = "http://www.tearfund.org/about_us/where_your_money_goes/impact_and_learning_report_2016_print-friendly/"
 
 # list and dictionary to store Page class items and url status
 pages = []
@@ -77,7 +72,6 @@ def main():
         print("Current Page: " + current_url)
         pages_status[current_url] = 1
         temp_page = page.Page(current_url)
-
         pages.append(temp_page)
         c = c + 1
 
@@ -87,10 +81,11 @@ def main():
 
         current_url = next_url()
 
-        if c == 10:
-            print("Scanned 100 pages")
-            print(pages_status)
+        # Setting a temporary limit on the number of times that the loop iterates
+        if c == 100:
+            break
 
+    storage.upload_information(pages)
 
 
 if __name__ == '__main__':

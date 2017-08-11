@@ -43,7 +43,7 @@ class Page(object):
             res.raise_for_status()
             self.page_text = bs4.BeautifulSoup(res.text, 'html.parser')
         except Exception as exc:
-            print("There was an error in getting page text.\nError:", exc)
+            pass
 
     def scrape_title_tags(self):
         """
@@ -53,7 +53,7 @@ class Page(object):
         try:
             self.title_text = self.page_text.select('title')[0].get_text()
         except Exception as exc:
-            print('Current Page is missing title text.\nError: ', exc)
+            pass
 
     def scrape_h_tags(self):
         """
@@ -66,7 +66,7 @@ class Page(object):
                 self.h_tags.setdefault(str(n)[1:3], 0)
                 self.h_tags[str(n)[1:3]] += 1
         except Exception as exc:
-            print('There are no head tags on current page.\nError: ', exc)
+            pass
 
     def scrape_alt_text(self):
         """
