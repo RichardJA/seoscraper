@@ -1,11 +1,11 @@
 import re
 import bs4
 import requests
-import scraper
+
 
 class Page(object):
     def __init__(self, page_url):
-        self.page_url = page_url
+        self.page_url = self.set_full_url(page_url)
         self.page_text = ""
         self.title_text = ""
         self.title_length = 0
@@ -19,13 +19,20 @@ class Page(object):
         """
         Calls the various functions to set the values within the Page class
         """
+        # Uncomment when debugging
         self.get_page_text()
         self.scrape_title_tags()
+        # print("Title text set to: ", self.title_text)
         self.title_length = len(self.title_text)
+        # print("Title length set to: ", self.title_length)
         self.scrape_h_tags()
+        # print("H Tags set to: ", self.h_tags)
         self.scrape_alt_text()
+        # print("Alt Text set to: ", self.alt_text)
         self.scrape_anchor_text()
+        # print("Anchor Text set to: ", self.anchors)
         self.get_all_links()
+        # print("All Links set to: ", self.all_links)
 
     def get_page_text(self):
         """
@@ -82,17 +89,20 @@ class Page(object):
         bad_anchors_text = ['read more', 'click here', 'here', 'see more', 'learn more', 'find out more']
         links = self.page_text.select('a')
         links_logged = []
-
         for n in links:
-            link_regex = re.compile(r'\?.*|/en/|http.*|mailto:.*|#')
-            mo = link_regex.sub("", n.get('href'))
-            if mo != "":
-                if mo not in links_logged and mo != 'javascript:void(0)':
-                    links_logged.append(n.get('href'))
-                    # This code is not needed unless we want to report on all anchors, not just bad anchors
-                    # self.anchors += 1
-                    if n.get_text().replace('\n', '').lower() in bad_anchors_text:
-                        self.anchors += 1
+            try:
+                link_regex = re.compile(r'\?.*|/en/|http.*|mailto:.*|#')
+                mo = link_regex.sub("", self.set_full_url(n.get('href')))
+
+                if mo != "":
+                    if mo not in links_logged and mo != 'javascript:void(0)':
+                        links_logged.append(n.get('href'))
+                        # This code is not needed unless we want to report on all anchors, not just bad anchors
+                        # self.anchors += 1
+                        if n.get_text().replace('\n', '').lower() in bad_anchors_text:
+                            self.anchors += 1
+            except Exception as exc:
+                continue
 
     def get_all_links(self):
         """
@@ -100,14 +110,21 @@ class Page(object):
         This can then be stored and cross referenced to find other pages for the program to crawl
         """
         links = self.page_text.select('a')
-
         for n in links:
-            link_regex = re.compile(r'\?.*|/en/|http.*|mailto:.*|#')
-            mo = link_regex.sub("", n.get('href'))
-            if mo != "":
-                if mo not in self.all_links and mo != 'javascript:void(0)':
-                    mo = self.set_full_url(mo)
-                    self.all_links.append(mo)
+
+            try:
+                link_regex = re.compile(r'\?.*|http.*|mailto:.*|#.*')
+                mo = link_regex.sub("", self.set_full_url(n.get('href')))
+
+                link_regex = re.compile(r'/en/')
+                mo = link_regex.sub("/", mo)
+
+                if mo != "":
+                    if mo not in self.all_links and mo != 'javascript:void(0)':
+                        mo = self.set_full_url(mo)
+                        self.all_links.append(mo)
+            except Exception as exc:
+                continue
 
     def set_full_url(self, url):
         """
@@ -116,10 +133,12 @@ class Page(object):
         If not already part of dictionary, adds it and sets default value to 0
         Value should only ever be set to 1 if the page is scraped
         """
+        if url[0] != "/" and url[0:4] != "http" and url[0:3] != "www":
+            url = "http://www.tearfund.org/" + url
         if url[0] == "/":
-            self.page_url = "www.tearfund.org" + url
+            url = "www.tearfund.org" + url
         elif url[0:4] != "http" and url[0:3] != "www":
-            self.page_url = "www.tearfund.org/" + url
-        return self.page_url
+            url = "www.tearfund.org/" + url
+        return url
 
 
