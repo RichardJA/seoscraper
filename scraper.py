@@ -63,7 +63,6 @@ def main():
     while True:
         res = requests.get(current_url)
         if res.history:
-            print(current_url, "Appears to be a redirect.")
             del pages_status[current_url]
             add_to_dictionary(res.url)
             current_url = next_url()
@@ -73,6 +72,8 @@ def main():
         pages_status[current_url] = 1
         temp_page = page.Page(current_url)
         pages.append(temp_page)
+
+        # This is used to create part of the temporary limit on crawls
         c = c + 1
 
         for n in temp_page.all_links:
@@ -88,5 +89,5 @@ def main():
     storage.upload_information(pages)
 
 
-if __name__ == '__main__':
-    main()
+    if __name__ == '__main__':
+        main()
