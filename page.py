@@ -2,7 +2,6 @@ import re
 import bs4
 import requests
 
-
 class Page(object):
     def __init__(self, page_url):
         self.page_url = self.set_full_url(page_url)
@@ -19,20 +18,14 @@ class Page(object):
         """
         Calls the various functions to set the values within the Page class
         """
-        # Uncomment when debugging
         self.get_page_text()
         self.scrape_title_tags()
-        # print("Title text set to: ", self.title_text)
         self.title_length = len(self.title_text)
-        # print("Title length set to: ", self.title_length)
         self.scrape_h_tags()
-        # print("H Tags set to: ", self.h_tags)
         self.scrape_alt_text()
-        # print("Alt Text set to: ", self.alt_text)
         self.scrape_anchor_text()
-        # print("Anchor Text set to: ", self.anchors)
         self.get_all_links()
-        # print("All Links set to: ", self.all_links)
+        return self.title_text
 
     def get_page_text(self):
         """
@@ -91,7 +84,7 @@ class Page(object):
         links_logged = []
         for n in links:
             try:
-                link_regex = re.compile(r'\?.*|/en/|http.*|mailto:.*|#')
+                link_regex = re.compile(r'http.*|mailto:.*|#')
                 mo = link_regex.sub("", self.set_full_url(n.get('href')))
 
                 if mo != "":
@@ -113,7 +106,7 @@ class Page(object):
         for n in links:
 
             try:
-                link_regex = re.compile(r'\?.*|http.*|mailto:.*|#.*')
+                link_regex = re.compile(r'http.*|mailto:.*|#.*')
                 mo = link_regex.sub("", self.set_full_url(n.get('href')))
 
                 link_regex = re.compile(r'/en/')
@@ -140,5 +133,23 @@ class Page(object):
         elif url[0:4] != "http" and url[0:3] != "www":
             url = "www.tearfund.org/" + url
         return url
+
+    def clean_url(self, url):
+        """
+        Takes the url passed to it and cleans it
+        Removes query strings
+        Removes nation specific tage, eg /en/ /en-ws/ etc.
+        """
+
+        pass
+
+    def clean_page_text(self, text):
+        """
+        Takes the page text passed to it and cleans it
+        Should be left with just the copy of the text
+        Removes all tags and code
+        """
+
+        pass
 
 
