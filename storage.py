@@ -7,7 +7,7 @@ def upload_information(pages):
     """
     Is sent the information from the main file and uploads it row by row to the Google Doc
     """
-    print(pages[1].page_url)
+    print(pages[0].page_url)
     """
     # Initialising connection to Google Sheets
     scope = ['https://www.googleapis.com/auth/spreadsheets']

@@ -1,5 +1,4 @@
 import page
-import requests
 import storage
 
 domain = "https://www.tearfund.org"
@@ -11,34 +10,6 @@ pages_status = {}
 
 # Storing the headlines in a dictionary to see whether there is any duplication of headlines
 all_titles = {}
-
-def get_full_url(url):
-    """
-    Takes the page text passed through and finds all the links
-    Checks whether the link is an internal link and if not ignores it
-    If not already part of dictionary, adds it and sets default value to 0
-    Value should only ever be set to 1 if the page is scraped
-    """
-    url = clean_url(url)
-    if url[0:4] == "/en/":
-        url = domain + url[4:]
-    elif url[0] == "/":
-        url = domain + url
-    elif url[0:3] == "www":
-        url = "https://" + url
-    elif url[0:4] == "http" and url[0:5] != "https":
-        url = "https" + url[4:]
-    elif url[0:5] != "https":
-        url = domain + "/" + url
-    return url
-
-
-def clean_url(url):
-    """
-    TODO: This needs to remove query strings from the url
-    """
-
-    return url.split('?', maxsplit=1)[0]
 
 
 def add_to_dictionary(url):
@@ -61,7 +32,10 @@ def next_url():
     """
     for k, v in pages_status.items():
         if v == 0:
-            return get_full_url(k)
+            return k
+        # Uncomment this when setting live for whole site
+        # else:
+            # return False
     input('No more pages to scan')
 
 
@@ -78,16 +52,6 @@ def main():
     add_to_dictionary(current_url)
 
     while True:
-        res = requests.get(current_url)
-        # Checks if the page is a redirect
-        # If it is, it adds the new page to the dictionary and removes the redirect
-        if res.history:
-            print(str(c + 1), current_url, ": Appears to be a redirect.")
-            del pages_status[current_url]
-            add_to_dictionary(res.url)
-            current_url = next_url()
-            continue
-
         print(str(c + 1) + ": Current Page: " + current_url)
         pages_status[current_url] = 1
         temp_page = page.Page(current_url)
@@ -101,13 +65,16 @@ def main():
         c = c + 1
 
         for n in temp_page.all_links:
-            current_url = get_full_url(n)
-            add_to_dictionary(current_url)
+            add_to_dictionary(n)
 
         current_url = next_url()
 
+        # Uncomment this when setting live for whole site
+        # if current_url == False:
+        #     break
+
         # Setting a temporary limit on the number of times that the loop iterates
-        if c == 100:
+        if c == 1:
             break
 
     storage.upload_information(pages)
