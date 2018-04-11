@@ -1,29 +1,15 @@
 import page
-import requests
 import storage
 
-domain = "http://www.tearfund.org"
-start_url = 'http://www.tearfund.org/'
+domain = "https://www.tearfund.org"
+start_url = 'https://www.tearfund.org/'
 
-# list and dictionary to store Page class items and url status
+# List and dictionary to store Page class items and url status
 pages = []
 pages_status = {}
 
-
-def get_full_url(url):
-    """
-    Takes the page text passed through and finds all the links
-    Checks whether the link is an internal link and if not ignores it
-    If not already part of dictionary, adds it and sets default value to 0
-    Value should only ever be set to 1 if the page is scraped
-    """
-    if url[0] == "/":
-        url = domain + url
-    elif url[0:3] == "www":
-        url = "http://" + url
-    elif url[0:4] != "http":
-        url = domain + "/" + url
-    return url
+# Storing the headlines in a dictionary to see whether there is any duplication of headlines
+all_titles = {}
 
 
 def add_to_dictionary(url):
@@ -32,10 +18,12 @@ def add_to_dictionary(url):
     These types of files will have issues being scanned so are cleaned out by this function
     """
     no_list = [".pdf", "pdf/", ".doc", "docx", ".ppt", "pptx"]
-    if url[-4:] in no_list:
+    if url[-4:] in no_list or url[:24] != "https://www.tearfund.org":
+        # print('Will not add ' + url + ' to dictionary')
         pass
     else:
         pages_status.setdefault(url, 0)
+        # print ('Adding ' + url + ' to dictionary')
 
 
 def next_url():
@@ -44,7 +32,10 @@ def next_url():
     """
     for k, v in pages_status.items():
         if v == 0:
-            return get_full_url(k)
+            return k
+        # Uncomment this when setting live for whole site
+        # else:
+            # return False
     input('No more pages to scan')
 
 
@@ -69,18 +60,27 @@ def main():
             continue
 
         print("Current Page: " + current_url)
+
         pages_status[current_url] = 1
         temp_page = page.Page(current_url)
         pages.append(temp_page)
 
-        # This is used to create part of the temporary limit on crawls
-        c = c + 1
+        # Gets the page title and stores it in a dictionary, noting the amount of occurrences of the title
+        page_title = temp_page.title_text
+        all_titles.setdefault(page_title, 0)
+        all_titles[page_title] += 1
 
         for n in temp_page.all_links:
-            current_url = get_full_url(n)
-            add_to_dictionary(current_url)
+            add_to_dictionary(n)
 
         current_url = next_url()
+
+        # Uncomment this when setting live for whole site
+        # if current_url == False:
+        #     break
+
+        # This is used to create part of the temporary limit on crawls
+        c = c + 1
 
         # Setting a temporary limit on the number of times that the loop iterates
         if c == 100:
