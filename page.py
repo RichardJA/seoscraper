@@ -1,6 +1,7 @@
 import re
 import bs4
 import requests
+from textstat.textstat import textstat
 
 class Page(object):
     def __init__(self, page_url):
@@ -13,23 +14,22 @@ class Page(object):
         self.alt_text = {"With Alt": 0, "Without Alt": 0}
         self.anchors = 0
         self.all_links = []
+        self.reading_score = 0
         self.initiate_page()
-        print(page_url)
 
     def initiate_page(self):
         """
         Calls the various functions to set the values within the Page class
         """
         self.get_page_content()
-        self.get_page_text()
+        self.clean_page_text()
         self.scrape_title_tags()
         self.title_length = len(self.title_text)
         self.scrape_h_tags()
         self.scrape_alt_text()
         self.scrape_anchor_text()
+        self.get_reading_score()
         self.get_all_links()
-
-        return self.title_text
 
     def get_page_content(self):
         """
@@ -39,19 +39,20 @@ class Page(object):
         try:
             res.raise_for_status()
             self.page_content = bs4.BeautifulSoup(res.text, 'html.parser')
+
         except Exception as exc:
             pass
 
-
-    def clean_page_text(self, text):
+    def clean_page_text(self):
         """
         Takes the page text passed to it and cleans it
         Should be left with just the copy of the text
         Removes all tags and code
         """
+        text_elements = self.page_content.select('p')
 
-        pass
-
+        for n in text_elements:
+            self.page_text = self.page_text + " " + str(n.getText())
 
     def scrape_title_tags(self):
         """
@@ -75,6 +76,16 @@ class Page(object):
                 self.h_tags[str(n)[1:3]] += 1
         except Exception as exc:
             pass
+
+    def get_reading_score(self):
+        """
+        Takes the page copy and return the flesch reading age of the page
+        Also checking whether the page text has more than 0 characters as it will return an error
+        """
+        if len(self.page_text) > 0:
+            self.reading_score = textstat.flesch_reading_ease(self.page_text)
+        else:
+            self.reading_score = 0
 
     def scrape_alt_text(self):
         """
@@ -121,9 +132,6 @@ class Page(object):
         for n in links:
 
             try:
-                # This used to be regex, however I have changed it to a bs4 selection
-                # This is because I didn't think it was correctly working, nor was it the most efficient way
-
                 # Prevents storing redirects
                 res = requests.get(self.set_full_url(n.get('href')))
                 url = res.url
@@ -132,14 +140,16 @@ class Page(object):
                 if url[-1] != "/":
                     url = url + "/"
 
+                url = self.remove_nations(url)
+
                 if res.url != "" and url not in self.all_links:
                     if self.check_valid_url(url):
-                        #print("Approved: " + url)
+                        # print("Approved: " + url)
                         self.all_links.append(url)
-                    # else:
-                        # print('Not Valid: ' + url)
+                #     else:
+                #         print('Not Valid: ' + url)
                 # else:
-                    # print('Already in links: ' + url)
+                #     print('Already in links: ' + url)
 
             except Exception as exc:
                 continue
@@ -149,40 +159,36 @@ class Page(object):
         Takes the page text passed through and finds all the links
         Checks whether the link is an internal link and if not ignores it
         """
-        url = url.split('?', maxsplit=1)[0]
-        url = url.split('#', maxsplit=1)[0]
-
+        # At some point I need to look at how to do this with urllib
         if url[0] == '#':
             return url
 
-        if url[-1] != "/":
-            url = url + "/"
+        url = url.split('?', maxsplit=1)[0]
+        url = url.split('#', maxsplit=1)[0]
 
         if url[0:4] != "http" and url[0] != "/":
             url = "/" + url
 
-        if url[0:4] == '/en/':
-            url = 'https://www.tearfund.org' + url[3:]
-        elif url[0] == "/":
+        if url[0] == "/":
             url = 'https://www.tearfund.org' + url
-        elif url[0:3] == "www":
-            url = "https://" + url
-        elif url[0:4] == "http" and url[0:5] != "https":
+        elif url[0:4] == "http" and url[4] != "s":
             url = "https" + url[4:]
         elif url[0:5] != "https":
-            url = 'https://www.tearfund.org' + "/" + url
+            url = 'https://www.tearfund.org/' + url
+        return url
+
+    def remove_nations(self, url):
+        """
+        Detects whether the url passed has nation specific urls
+        """
+        nation_regex = re.compile(r'/en/|/en-../')
+        url = nation_regex.sub('/', url)
 
         return url
 
-    def get_page_text(self):
-        """
-        Takes the text and grabs out the content within the body tag.
-        Then strips out any text within <> tafs
-        """
-
     def check_valid_url(self, url):
         """
-        Checks whether the URL is a Tearfund URL and whether it is a valid webpage (eg not mailto)
+        Checks whether the URL is a site specific URL and whether it is a valid webpage (eg not mailto)
         Returns False if invalid and True if valid
         """
         if url[0] == '#':
@@ -194,6 +200,13 @@ class Page(object):
             if word in url:
                 return False
 
+        # Looking to see if the match is tearfund's own site, and excluding it if not
+        reg_external_site = re.compile(r'https://www\.tearfund\.org')
+        match_object = reg_external_site.search(url)
+
+        if match_object is None:
+            return False
+
         # Looking to see whether the match as an email address and excluding it if it is
         reg_email = re.compile(r'mailto:')
         match_object = reg_email.search(url)
@@ -201,11 +214,4 @@ class Page(object):
         if match_object is not None:
             return False
 
-        # Looking to see if the match is tearfund's own site, and excluding it if not
-        reg_exernal_site = re.compile(r'https://www\.tearfund\.org')
-        match_object = reg_exernal_site.search(url)
-
-        if match_object is None:
-            return False
         return True
-

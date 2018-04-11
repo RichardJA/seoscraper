@@ -1,5 +1,7 @@
 import page
 import storage
+import requests
+from collections import defaultdict
 
 domain = "https://www.tearfund.org"
 start_url = 'https://www.tearfund.org/'
@@ -9,7 +11,8 @@ pages = []
 pages_status = {}
 
 # Storing the headlines in a dictionary to see whether there is any duplication of headlines
-all_titles = {}
+# using defaultdict allows you to specify that the value in the dictionary is a list
+all_titles = defaultdict(list)
 
 
 def add_to_dictionary(url):
@@ -59,7 +62,7 @@ def main():
             current_url = next_url()
             continue
 
-        print("Current Page: " + current_url)
+        print(str(c + 1) + " - Current Page: " + current_url)
 
         pages_status[current_url] = 1
         temp_page = page.Page(current_url)
@@ -67,8 +70,7 @@ def main():
 
         # Gets the page title and stores it in a dictionary, noting the amount of occurrences of the title
         page_title = temp_page.title_text
-        all_titles.setdefault(page_title, 0)
-        all_titles[page_title] += 1
+        all_titles[page_title].append(temp_page.page_url)
 
         for n in temp_page.all_links:
             add_to_dictionary(n)
@@ -83,7 +85,7 @@ def main():
         c = c + 1
 
         # Setting a temporary limit on the number of times that the loop iterates
-        if c == 100:
+        if c == 999:
             break
 
     storage.upload_information(pages)
