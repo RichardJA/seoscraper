@@ -6,6 +6,7 @@ import requests
 class Page(object):
     def __init__(self, page_url):
         self.page_url = self.set_full_url(page_url)
+        self.page_content = ""
         self.page_text = ""
         self.title_text = ""
         self.title_length = 0
@@ -19,29 +20,24 @@ class Page(object):
         """
         Calls the various functions to set the values within the Page class
         """
-        # Uncomment when debugging
-        self.get_page_text()
-        self.scrape_title_tags()
-        # print("Title text set to: ", self.title_text)
-        self.title_length = len(self.title_text)
-        # print("Title length set to: ", self.title_length)
-        self.scrape_h_tags()
-        # print("H Tags set to: ", self.h_tags)
-        self.scrape_alt_text()
-        # print("Alt Text set to: ", self.alt_text)
-        self.scrape_anchor_text()
-        # print("Anchor Text set to: ", self.anchors)
-        self.get_all_links()
-        # print("All Links set to: ", self.all_links)
+        self.get_page_content()
 
-    def get_page_text(self):
+        self.scrape_title_tags()
+        self.title_length = len(self.title_text)
+        self.scrape_h_tags()
+        self.scrape_alt_text()
+        self.scrape_anchor_text()
+        self.get_all_links()
+        self.get_page_text()
+
+    def get_page_content(self):
         """
         Takes the URL and gets the text from the page associated to the URL
         """
         res = requests.get(self.page_url)
         try:
             res.raise_for_status()
-            self.page_text = bs4.BeautifulSoup(res.text, 'html.parser')
+            self.page_content = bs4.BeautifulSoup(res.text, 'html.parser')
         except Exception as exc:
             pass
 
@@ -51,7 +47,7 @@ class Page(object):
         These values are then stored in a dictionary
         """
         try:
-            self.title_text = self.page_text.select('title')[0].get_text()
+            self.title_text = self.page_content.select('title')[0].get_text()
         except Exception as exc:
             pass
 
@@ -61,7 +57,7 @@ class Page(object):
         Each h tag is added to a dictionary and the values totalled up
         """
         try:
-            h1_tags = self.page_text.select('h1')
+            h1_tags = self.page_content.select('h1')
             for n in h1_tags:
                 self.h_tags.setdefault(str(n)[1:3], 0)
                 self.h_tags[str(n)[1:3]] += 1
@@ -73,7 +69,7 @@ class Page(object):
         Takes the page text and finds the images
         Dictionary values increased depending on whether the image has alt text or not
         """
-        image_code = self.page_text.select('img')
+        image_code = self.page_content.select('img')
         for n in range(len(image_code)):
             if image_code[n].get('alt') == "":
                 self.alt_text["Without Alt"] += 1
@@ -87,7 +83,7 @@ class Page(object):
         Note: For SEO purposes, Google only really cares about the first link, so this will only evaluate the first link
         """
         bad_anchors_text = ['read more', 'click here', 'here', 'see more', 'learn more', 'find out more']
-        links = self.page_text.select('a')
+        links = self.page_content.select('a')
         links_logged = []
         for n in links:
             try:
@@ -109,7 +105,7 @@ class Page(object):
         Takes the page text and finds all the link urls
         This can then be stored and cross referenced to find other pages for the program to crawl
         """
-        links = self.page_text.select('a')
+        links = self.page_content.select('a')
         for n in links:
 
             try:
@@ -141,4 +137,9 @@ class Page(object):
             url = "www.tearfund.org/" + url
         return url
 
+    def get_page_text(self):
+        """
+        Takes the text and grabs out the content within the body tag.
+        Then strips out any text within <> tafs
+        """
 

@@ -89,5 +89,5 @@ def main():
     storage.upload_information(pages)
 
 
-    if __name__ == '__main__':
-        main()
+if __name__ == '__main__':
+    main()

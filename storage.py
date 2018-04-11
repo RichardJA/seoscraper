@@ -1,5 +1,4 @@
 import gspread
-import page
 from oauth2client.service_account import ServiceAccountCredentials
 
 
