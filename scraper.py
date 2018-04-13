@@ -68,7 +68,6 @@ def main():
 
         pages_status[current_url] = 1
         temp_page = page.Page(current_url)
-        pages.append(temp_page)
 
         # Gets the page title and stores it in a dictionary, noting the amount of occurrences of the title
         page_title = temp_page.title_text
@@ -76,7 +75,10 @@ def main():
 
         for n in temp_page.all_links:
             add_to_dictionary(n)
+            # This line of code keeps the memory usage down whilst I figure out what to do with all the links
+            temp_page.all_links = []
 
+        pages.append(temp_page)
         current_url = next_url()
 
         # If there are no further pages, current_url should be false
@@ -88,7 +90,12 @@ def main():
         # This is used to create part of the temporary limit on crawls & to pass row for storage
         c = c + 1
 
-        storage.upload_information(sheet_connect, temp_page, c)
+        # Need to put this here in case the connection times out
+        try:
+            storage.upload_information(sheet_connect, temp_page, c)
+        except Exception as Exc:
+            sheet_connect = storage.connect_to_google_sheets()
+            storage.upload_information(sheet_connect, temp_page, c)
 
         print("\tProcess Took: " + str(time.time() - start_time)[:6] + " seconds")
 

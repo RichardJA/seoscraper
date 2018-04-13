@@ -3,6 +3,8 @@ import bs4
 import requests
 from textstat.textstat import textstat
 
+page_dictionary = {}
+
 class Page(object):
     def __init__(self, page_url):
         self.page_url = self.set_full_url(page_url)
@@ -126,6 +128,18 @@ class Page(object):
         for n in links:
 
             try:
+                # Checks whether we can just skip the url at the very beginning if it falls into certain categories
+                if not self.automatic_rejected_url(n.get('href')):
+                    continue
+
+                page_dict_key = self.remove_nations_and_query_strings(n.get('href'))
+
+                # Using a dictionary to speed up checking and assigning urls. Since a lot of the URLs are reused
+                # It makes sense not to have to keep rechecking the pages when we already have the data
+                if page_dict_key in page_dictionary:
+                    self.all_links.append(page_dictionary[page_dict_key])
+                    continue
+
                 # Prevents storing redirects
                 res = requests.get(self.set_full_url(n.get('href')))
                 url = res.url
@@ -140,6 +154,7 @@ class Page(object):
                     if self.check_valid_url(url):
                         # print("Approved: " + url)
                         self.all_links.append(url)
+                        page_dictionary[page_dict_key] = url
                 #     else:
                 #         print('Not Valid: ' + url)
                 # else:
@@ -181,19 +196,28 @@ class Page(object):
 
         return url
 
-    def check_valid_url(self, url):
+    def automatic_rejected_url(self, url):
         """
-        Checks whether the URL is a site specific URL and whether it is a valid webpage (eg not mailto)
-        Returns False if invalid and True if valid
+        Automatically rejecting URLS matching any of these criteroa
         """
         if url[0] == '#':
             return False
 
         # URLS that shouldn't be included in the scrape
-        no_list = ["~", "/../", "/layouts/", "/admin/"]
+        no_list = ["~", "/../", "layouts/sub", "/admin/", "javascript"]
         for word in no_list:
-            if word in url:
+            if word in url.lower():
                 return False
+
+        return True
+
+    def check_valid_url(self, url):
+        """
+        Checks whether the URL is a site specific URL and whether it is a valid webpage (eg not mailto)
+        Returns False if invalid and True if valid
+        """
+        if not self.automatic_rejected_url(url):
+            return False
 
         # Looking to see if the match is tearfund's own site, and excluding it if not
         reg_external_site = re.compile(r'https://www\.tearfund\.org')
