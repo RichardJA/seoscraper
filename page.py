@@ -82,7 +82,7 @@ class Page(object):
         Takes the page copy and return the flesch reading age of the page
         Also checking whether the page text has more than 0 characters as it will return an error
         """
-        if len(self.page_text) > 0:
+        if len(self.page_text) > 10:
             self.reading_score = textstat.flesch_reading_ease(self.page_text)
         else:
             self.reading_score = 0
@@ -128,7 +128,7 @@ class Page(object):
         Takes the page text and finds all the link urls
         This can then be stored and cross referenced to find other pages for the program to crawl
         """
-        links = self.page_content.select('a')
+        links = set(self.page_content.select('a'))
         for n in links:
 
             try:
@@ -140,7 +140,7 @@ class Page(object):
                 if url[-1] != "/":
                     url = url + "/"
 
-                url = self.remove_nations(url)
+                url = self.remove_nations_and_query_strings(url)
 
                 if res.url != "" and url not in self.all_links:
                     if self.check_valid_url(url):
@@ -163,9 +163,6 @@ class Page(object):
         if url[0] == '#':
             return url
 
-        url = url.split('?', maxsplit=1)[0]
-        url = url.split('#', maxsplit=1)[0]
-
         if url[0:4] != "http" and url[0] != "/":
             url = "/" + url
 
@@ -177,10 +174,14 @@ class Page(object):
             url = 'https://www.tearfund.org/' + url
         return url
 
-    def remove_nations(self, url):
+    def remove_nations_and_query_strings(self, url):
         """
         Detects whether the url passed has nation specific urls
+        Or whether it should be split to exclude query strings
         """
+        url = url.split('?', maxsplit=1)[0]
+        url = url.split('#', maxsplit=1)[0]
+
         nation_regex = re.compile(r'/en/|/en-../')
         url = nation_regex.sub('/', url)
 

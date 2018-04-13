@@ -2,6 +2,7 @@ import page
 import storage
 import requests
 from collections import defaultdict
+import time
 
 domain = "https://www.tearfund.org"
 start_url = 'https://www.tearfund.org/'
@@ -55,6 +56,7 @@ def main():
     add_to_dictionary(current_url)
 
     while True:
+        start_time = time.time()
         res = requests.get(current_url)
         if res.history:
             del pages_status[current_url]
@@ -84,6 +86,7 @@ def main():
         # This is used to create part of the temporary limit on crawls
         c = c + 1
 
+        print("\tProcess Took: " + str(time.time() - start_time))
         # Setting a temporary limit on the number of times that the loop iterates
         if c == 999:
             break
