@@ -54,7 +54,7 @@ def main():
     c = 0
     current_url = start_url
     add_to_dictionary(current_url)
-
+    sheet_connect = storage.connect_to_google_sheets()
     while True:
         start_time = time.time()
         res = requests.get(current_url)
@@ -79,19 +79,24 @@ def main():
 
         current_url = next_url()
 
+        # If there are no further pages, current_url should be false
+        # As such break out of the loop
         # Uncomment this when setting live for whole site
-        # if current_url == False:
-        #     break
-
-        # This is used to create part of the temporary limit on crawls
-        c = c + 1
-
-        print("\tProcess Took: " + str(time.time() - start_time))
-        # Setting a temporary limit on the number of times that the loop iterates
-        if c == 999:
+        if not current_url:
             break
 
-    storage.upload_information(pages)
+        # This is used to create part of the temporary limit on crawls & to pass row for storage
+        c = c + 1
+
+        storage.upload_information(sheet_connect, temp_page, c)
+
+        print("\tProcess Took: " + str(time.time() - start_time)[:6] + " seconds")
+
+        # Setting a temporary limit on the number of times that the loop iterates
+        # Uncomment if wanted to test over a smaller set of pages
+        # if c == 999:
+        #     break
+    print("Scrape done. Scanned " + str(c + 1) + " pages!")
 
 
 if __name__ == '__main__':

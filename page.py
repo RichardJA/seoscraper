@@ -71,9 +71,12 @@ class Page(object):
         """
         try:
             h1_tags = self.page_content.select('h1')
-            for n in h1_tags:
-                self.h_tags.setdefault(str(n)[1:3], 0)
-                self.h_tags[str(n)[1:3]] += 1
+            if len(h1_tags) > 0:
+                for n in h1_tags:
+                    self.h_tags.setdefault(str(n)[1:3], 0)
+                    self.h_tags[str(n)[1:3]] += 1
+            else:
+                self.h_tags['h1'] = 0
         except Exception as exc:
             pass
 
@@ -107,21 +110,12 @@ class Page(object):
         """
         bad_anchors_text = ['read more', 'click here', 'here', 'see more', 'learn more', 'find out more']
         links = self.page_content.select('a')
-        links_logged = []
-        for n in links:
-            try:
-                link_regex = re.compile(r'http.*|mailto:.*|#')
-                mo = link_regex.sub("", self.set_full_url(n.get('href')))
 
-                if mo != "":
-                    if mo not in links_logged and mo != 'javascript:void(0)':
-                        links_logged.append(n.get('href'))
-                        # This code is not needed unless we want to report on all anchors, not just bad anchors
-                        # self.anchors += 1
-                        if n.get_text().replace('\n', '').lower() in bad_anchors_text:
-                            self.anchors += 1
-            except Exception as exc:
-                continue
+        for n in links:
+            n = n.getText()
+            if str(n).lower() in bad_anchors_text:
+                self.anchors += 1
+
 
     def get_all_links(self):
         """
